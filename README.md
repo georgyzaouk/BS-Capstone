@@ -1,2 +1,2 @@
 # BS-Capstone
-Hepatotoxicity prediction using ML
+Hepatotoxicity prediction using ML models
