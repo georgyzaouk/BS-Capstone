@@ -1,0 +1,202 @@
+---
+title: "LiverTox"
+author: "Me"
+date: "2025-03-27"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+## Visualization
+
+
+## LiverTox
+```{r}
+rm(list = ls())
+
+#load the excel file
+library(readxl)
+inputLiverTox = "masterlist01-25.xlsx"
+LiverToxData = read_xlsx(inputLiverTox, sheet = 1)
+#fix(LiverToxData)
+#summary(LiverToxData)
+
+#fix the column names
+colnames(LiverToxData) = as.character(LiverToxData[1, ])
+LiverToxData = LiverToxData[-1, ]
+#fix(LiverToxData)
+#summary(LiverToxData)
+
+#remove rows that are not drugs or have missing likelihood score values
+#unique(LiverToxData$`Likelihood Score`)
+LiverToxData = LiverToxData[!LiverToxData$`Likelihood Score` %in% c("1506", "E*", "Likelihood Score", "X", NA ), ]
+LiverToxData = LiverToxData[!LiverToxData$Drug == "0", ]
+
+#keep relevant columns
+LiverToxData = LiverToxData[, colnames(LiverToxData) %in% c("Ingredient", "Brand Name", "Likelihood Score")]
+#fix(LiverToxData)
+summary(LiverToxData)
+
+```
+
+```{r}
+##LiverTox
+# First option
+#map_category_A = function(dili_score) { if (dili_score == "A[HD]") return("A") else if (dili_score == "B[HD]") return("B") else if (dili_score == "C[HD]") return("C") else if (dili_score == "D[HD]") return("D")}
+
+#Second option
+#map_category_B = function(dili_score) { if (dili_score == "A[HD]") return("A") else if (dili_score == "B[HD]") return("B") else if (dili_score == "C[HD]") return("C") else if (dili_score == "D[HD]") return("D")}
+
+#Third option
+#unique(LiverToxData$`Likelihood Score`)
+LiverToxData = LiverToxData[!LiverToxData$`Likelihood Score` %in% c("A [HD]", "B[HD]", "C[HD]", "D[HD]"), ]
+
+library(ggplot2)
+ggplot(LiverToxData, aes(x = `Likelihood Score`)) +
+    geom_bar(fill = "orange", color = "black") +
+    theme_minimal() +
+    labs(title = "Class Distribution", x = "Class", y = "")
+
+#LiverTox output
+library(openxlsx)
+write.xlsx(LiverToxData, "LiverTox.xlsx")
+
+```
+
+
+## DILIrank
+```{r}
+library(readxl)
+inputDILIrank = "DILIrank-DILIscore_List.xlsx"
+DILIrankData = read_xlsx(inputDILIrank, sheet = 1)
+#summary(DILIrankData)
+
+colnames(DILIrankData) = as.character(DILIrankData[1, ])
+DILIrankData = DILIrankData[-1, ]
+#summary(DILIrankData)
+
+#remove rows having ambiguous DILI concern
+#unique(DILIrankData$vDILIConcern)
+DILIrankData = DILIrankData[!DILIrankData$vDILIConcern == "Ambiguous DILI-concern", ]
+DILIrankData = DILIrankData[ , colnames(DILIrankData) %in% c("Compound Name", "Severity Class")]
+summary(DILIrankData)
+
+```
+
+##Merged dataset
+```{r}
+##DILIrank
+# First option
+map_category_1 = function(dili_score) {
+  if (dili_score >= 7) return("A")
+  else if (dili_score >= 5) return("B")
+  else if (dili_score >= 3) return("C")
+  else if (dili_score >= 1) return("D")
+  else return("E")
+}
+
+# Second option
+map_category_2 = function(dili_score) {
+  if (dili_score >= 8) return("A")
+  else if (dili_score >= 6) return("B")
+  else if (dili_score >= 4) return("C")
+  else if (dili_score >= 2) return("D")
+  else return("E")
+}
+
+# Apply functions to the dataframe
+DILIrankData$Mapped_Category_1 = sapply(as.numeric(DILIrankData$`Severity Class`), map_category_1)
+DILIrankData$Mapped_Category_2 = sapply(as.numeric(DILIrankData$`Severity Class`), map_category_2)
+
+summary(DILIrankData)
+
+ggplot(DILIrankData, aes(`Severity Class`)) +
+  geom_bar(fill = "orange", color = "black") +
+    theme_minimal() +
+    labs(title = "Class Distribution DILIrank OG", x = "Class", y = "") +
+    scale_x_discrete(limits=rev)
+
+ggplot(DILIrankData, aes(Mapped_Category_1)) +
+  geom_bar(fill = "orange", color = "black") +
+    theme_minimal() +
+    labs(title = "Class Distribution DILIrank 1", x = "Class", y = "")
+
+ggplot(DILIrankData, aes(Mapped_Category_2)) +
+  geom_bar(fill = "orange", color = "black") +
+    theme_minimal() +
+    labs(title = "Class Distribution DILIrank 2", x = "Class", y = "")
+
+ggplot(LiverToxData, aes(`Likelihood Score`)) +
+  geom_bar(fill = "orange", color = "black") +
+    theme_minimal() +
+    labs(title = "Class Distribution LiverTox", x = "Class", y = "")
+
+DILIrankData = DILIrankData[ , colnames(DILIrankData) %in% c("Compound Name", "Mapped_Category_1")]
+
+#DILI output
+library(openxlsx)
+write.xlsx(DILIrankData, "DILIrank.xlsx")
+summary(DILIrankData)
+
+```
+
+#SMILES
+```{r}
+
+
+
+#done using python rdkit
+#https://colab.research.google.com/drive/1EvZ8mmustf_hnm1hd8KPGqeBLWDKfTXq#scrollTo=GuQaXdtsEOUa
+
+#
+
+#library(readxl)
+#smiles = read_xlsx("C:/Users/georg/Desktop/Spring2025/5-Capstone/Capstone/Databases/NewData/drug_smiles_output2.xlsx")
+#sum(is.na(smiles$SMILES))
+
+#remove na and duplicates
+
+```
+
+##Merge the datasets
+```{r}
+#
+#summary(DILIrankData)
+#summary(LiverToxData)
+
+#
+#sort(unique(DILIrankData$Mapped_Category_1))
+#sort(unique(LiverToxData$`Likelihood Score`))
+
+#
+#colnames(DILIrankData) = c("Drug Name", "Likelihood Score")
+#colnames(LiverToxData) = c("Drug Name", "Likelihood Score")
+#MergedData = rbind(DILIrankData, LiverToxData)
+#summary(MergedData)
+#head(MergedData)
+
+#
+#library(openxlsx)
+#output_file = "C:/Users/georg/Desktop/Spring2025/5-Capstone/Capstone/Databases/NewData/MergedData.xlsx"
+#write.xlsx(MergedData, output_file)
+
+```
+
+##CTD
+```{r}
+#chemgene = read_xlsx("C:/Users/georg/Desktop/Spring2025/5-Capstone/Capstone/Databases/CTD/excel/CTD_chem_gene_ixns.xlsx")
+#genedis = read_xlsx("C:/Users/georg/Desktop/Spring2025/5-Capstone/Capstone/Databases/CTD/excel/CTD_curated_genes_diseases.xlsx")
+
+#chemgene = chemgene[chemgene$Organism == "Homo sapiens", !colnames(chemgene) %in% c("CasRN", "OrganismID", "PubMedIDs")]
+#chemgene = chemgene[!is.na(chemgene$Organism), ]
+#summary(chemgene)
+#unique(chemgene$Organism)
+
+
+
+```
+
+
